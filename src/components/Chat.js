@@ -88,6 +88,9 @@ const Chat = () => {
 
     return (
         <div className="chat-container">
+          <div className="chat-header">
+                <h1>Pramod's GPT</h1>
+            </div>
             <div className="chat-window">
                 <div className="conversation">
                     {conversation.map((msg, index) => (
