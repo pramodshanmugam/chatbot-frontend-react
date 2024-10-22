@@ -1,68 +1,95 @@
 import React, { useState, useEffect, useRef } from 'react';
-import './Chat.css';
-import { v4 as uuidv4 } from 'uuid'; // Import the UUID generator
+import './Chat.css';  // Import the Chat.css file for styling
 
-function Chat() {
-  const [userMessage, setUserMessage] = useState('');
-  const [conversation, setConversation] = useState([]);
-  const [sessionId, setSessionId] = useState(() => uuidv4()); // Generate unique session ID
-  const messageEndRef = useRef(null);
+const Chat = () => {
+    const [userMessage, setUserMessage] = useState("");
+    const [conversation, setConversation] = useState([]);
+    const socketRef = useRef(null);
+    const sessionId = '12345';  // Replace this with your actual session ID logic
 
-  // Fetch chat history when component loads
-  useEffect(() => {
-    fetch(`http://localhost:8000/api/chat_history/?session_id=${sessionId}`)
-      .then(response => response.json())
-      .then(data => setConversation(data));
-  }, [sessionId]);
+    useEffect(() => {
+        // Open WebSocket connection
+        socketRef.current = new WebSocket('ws://localhost:8000/ws/chat/');
 
-  // Scroll to the bottom when new messages are added
-  useEffect(() => {
-    if (messageEndRef.current) {
-      messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [conversation]);
+        // Event handler when the connection is opened
+        socketRef.current.onopen = () => {
+            console.log("WebSocket connection established.");
+        };
 
-  const sendMessage = () => {
-    if (userMessage.trim() === '') return;
+        // Event handler when the server sends a message
+        socketRef.current.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log("Received message from server:", data);
 
-    const newMessage = { role: 'user', content: userMessage };
-    setConversation([...conversation, newMessage]);
-    setUserMessage('');
+            // Update the conversation with the bot's response
+            setConversation((prevConversation) => [
+                ...prevConversation,
+                { role: 'bot', content: data.message },  // Make sure the key matches the backend response
+            ]);
+        };
 
-    // Send message to the backend
-    fetch('http://localhost:8000/api/chat/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: userMessage, session_id: sessionId }),
-    })
-      .then(response => response.json())
-      .then(data => {
-        const botMessage = { role: 'bot', content: data.response };
-        setConversation(prev => [...prev, botMessage]);
-      });
-  };
+        // Event handler when the connection is closed
+        socketRef.current.onclose = (event) => {
+            console.log("WebSocket connection closed:", event);
+        };
 
-  return (
-    <div className="chat-window">
-      <div className="conversation">
-        {conversation.map((msg, index) => (
-          <div key={index} className={`message ${msg.role}`}>
-            {msg.content}
-          </div>
-        ))}
-        <div ref={messageEndRef} />
-      </div>
-      <div className="input-area">
-        <input 
-          type="text" 
-          value={userMessage} 
-          onChange={(e) => setUserMessage(e.target.value)} 
-          placeholder="Type a message..." 
-        />
-        <button onClick={sendMessage}>Send</button>
-      </div>
-    </div>
-  );
-}
+        // Event handler when there's an error with the WebSocket connection
+        socketRef.current.onerror = (error) => {
+            console.error("WebSocket error:", error);
+        };
+
+        return () => {
+            // Cleanup WebSocket when component unmounts
+            socketRef.current.close();
+        };
+    }, []);
+
+    const sendMessage = () => {
+        if (userMessage.trim() === "") return;
+
+        // Send user message to WebSocket server
+        socketRef.current.send(JSON.stringify({
+            message: userMessage,
+            session_id: sessionId
+        }));
+
+        // Update conversation with the user message
+        setConversation((prevConversation) => [
+            ...prevConversation,
+            { role: 'user', content: userMessage }
+        ]);
+
+        // Clear input field
+        setUserMessage("");
+    };
+
+    return (
+        <div className="chat-container">
+            <div className="chat-window">
+                <div className="conversation">
+                    {conversation.map((msg, index) => (
+                        <div
+                            key={index}
+                            className={`message ${msg.role === 'user' ? 'user' : 'bot'}`}
+                        >
+                            {msg.content}
+                        </div>
+                    ))}
+                </div>
+                <div className="input-area">
+                    <input
+                        type="text"
+                        value={userMessage}
+                        onChange={(e) => setUserMessage(e.target.value)}
+                        placeholder="Type a message"
+                    />
+                    <button onClick={sendMessage} disabled={!userMessage.trim()}>
+                        Send
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 export default Chat;
