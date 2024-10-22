@@ -81,3 +81,10 @@
   background-color: #ccc;
   cursor: not-allowed;
 }
+
+.chat-footer {
+  text-align: center;
+  font-size: 0.8em;
+  color: gray;
+  margin-top: 10px;
+}

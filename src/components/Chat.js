@@ -42,31 +42,24 @@ const Chat = () => {
     }, []);
 
     const updateBotMessage = (message) => {
-        // Split the message based on newlines
-        const messageChunks = message.split("\n");
-
-        // Only append complete chunks to the conversation
+        // Append the message to the last bot message if it exists, otherwise create a new message
         setConversation((prevConversation) => {
             const lastMessage = prevConversation[prevConversation.length - 1];
-
+    
             if (lastMessage && lastMessage.role === 'bot') {
-                // Append to the last bot message if it's incomplete
-                const updatedMessage = lastMessage.content + messageChunks[0];
+                // Append the new message with a newline if the last message is from the bot
+                const updatedMessage = lastMessage.content + '\n' + message;
                 const updatedConversation = [...prevConversation];
                 updatedConversation[updatedConversation.length - 1] = { role: 'bot', content: updatedMessage };
-
-                return updatedConversation.concat(
-                    messageChunks.slice(1).map((chunk) => ({ role: 'bot', content: chunk }))
-                );
+    
+                return updatedConversation;
             }
-
-            // Add new bot messages when \n is encountered
-            return prevConversation.concat(
-                messageChunks.map((chunk) => ({ role: 'bot', content: chunk }))
-            );
+    
+            // If no previous bot message, add the new one
+            return prevConversation.concat({ role: 'bot', content: message });
         });
     };
-
+    
     const sendMessage = () => {
         if (userMessage.trim() === "") return;
 
@@ -88,7 +81,7 @@ const Chat = () => {
 
     return (
         <div className="chat-container">
-          <div className="chat-header">
+            <div className="chat-header">
                 <h1>Pramod's GPT</h1>
             </div>
             <div className="chat-window">
@@ -97,10 +90,8 @@ const Chat = () => {
                         <div
                             key={index}
                             className={msg.role === 'user' ? 'message user' : 'message bot'}
-                        >
-                            {/* Display message normally */}
-                            <p>{msg.content}</p>
-                        </div>
+                            dangerouslySetInnerHTML={{ __html: msg.content }}  // Render HTML content for newlines
+                        />
                     ))}
                 </div>
 
@@ -115,6 +106,11 @@ const Chat = () => {
                         Send
                     </button>
                 </div>
+            </div>
+
+            {/* Footer section for "Created by" */}
+            <div className="chat-footer">
+                <p>Created by Pramod Shanmugam Nagaraj</p>
             </div>
         </div>
     );
