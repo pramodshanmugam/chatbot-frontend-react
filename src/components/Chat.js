@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import './Chat.css';  // Import the Chat.css file for styling
+import './Chat.css';  // Import the external CSS file
 
 const Chat = () => {
     const [userMessage, setUserMessage] = useState("");
@@ -21,11 +21,8 @@ const Chat = () => {
             const data = JSON.parse(event.data);
             console.log("Received message from server:", data);
 
-            // Update the conversation with the bot's response
-            setConversation((prevConversation) => [
-                ...prevConversation,
-                { role: 'bot', content: data.message },  // Make sure the key matches the backend response
-            ]);
+            // Handle the message based on \n
+            updateBotMessage(data.message);
         };
 
         // Event handler when the connection is closed
@@ -43,6 +40,32 @@ const Chat = () => {
             socketRef.current.close();
         };
     }, []);
+
+    const updateBotMessage = (message) => {
+        // Split the message based on newlines
+        const messageChunks = message.split("\n");
+
+        // Only append complete chunks to the conversation
+        setConversation((prevConversation) => {
+            const lastMessage = prevConversation[prevConversation.length - 1];
+
+            if (lastMessage && lastMessage.role === 'bot') {
+                // Append to the last bot message if it's incomplete
+                const updatedMessage = lastMessage.content + messageChunks[0];
+                const updatedConversation = [...prevConversation];
+                updatedConversation[updatedConversation.length - 1] = { role: 'bot', content: updatedMessage };
+
+                return updatedConversation.concat(
+                    messageChunks.slice(1).map((chunk) => ({ role: 'bot', content: chunk }))
+                );
+            }
+
+            // Add new bot messages when \n is encountered
+            return prevConversation.concat(
+                messageChunks.map((chunk) => ({ role: 'bot', content: chunk }))
+            );
+        });
+    };
 
     const sendMessage = () => {
         if (userMessage.trim() === "") return;
@@ -70,12 +93,14 @@ const Chat = () => {
                     {conversation.map((msg, index) => (
                         <div
                             key={index}
-                            className={`message ${msg.role === 'user' ? 'user' : 'bot'}`}
+                            className={msg.role === 'user' ? 'message user' : 'message bot'}
                         >
-                            {msg.content}
+                            {/* Display message normally */}
+                            <p>{msg.content}</p>
                         </div>
                     ))}
                 </div>
+
                 <div className="input-area">
                     <input
                         type="text"

@@ -1,3 +1,4 @@
+/* Chat.css */
 .chat-container {
   display: flex;
   justify-content: center;
@@ -15,6 +16,7 @@
   background-color: white;
   padding: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  position: relative;
 }
 
 .conversation {
@@ -67,4 +69,13 @@
 .input-area button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
+}
+
+/* Connection status indicator */
+.connection-status {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  font-size: 12px;
+  color: red;
 }
