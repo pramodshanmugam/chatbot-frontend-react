@@ -7,6 +7,9 @@ const Chat = () => {
     const socketRef = useRef(null);
     const sessionId = '12345';  // Replace this with your actual session ID logic
 
+    // Access the chat name from environment variables
+    const chatName = process.env.REACT_APP_CHAT_NAME || "Pramod's";
+
     useEffect(() => {
         // Open WebSocket connection
         socketRef.current = new WebSocket('ws://localhost:8000/ws/chat/');
@@ -82,7 +85,7 @@ const Chat = () => {
     return (
         <div className="chat-container">
             <div className="chat-header">
-                <h1>Pramod's GPT</h1>
+                <h1>{chatName} GPT</h1>
             </div>
             <div className="chat-window">
                 <div className="conversation">
